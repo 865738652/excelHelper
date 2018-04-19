@@ -1,16 +1,18 @@
 package com.excelHelper.core;
 
+import com.excelHelper.core.convert.BaseConvertHandler;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import com.excelHelper.core.convert.ConvertHandler;
 import java.io.FileOutputStream;
 import java.lang.reflect.Field;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 /**
  * WorkbookUtil
  *
@@ -18,6 +20,7 @@ import java.util.LinkedHashMap;
  * @since 2018-04-13 下午8:23
  */
 public class WorkbookUtil {
+
 
     /**
      * <p>
@@ -36,10 +39,9 @@ public class WorkbookUtil {
      * @return Workbook
      * @throws Exception
      */
-    public static <T> Workbook getWorkBook(List<T> list,List<String> titles) throws Exception{
+    public static <T> Workbook getWorkBook(Class<?> clazz,List<T> list, List<String> titles) throws Exception{
         Workbook workbook = null;
         //获取一下转换对象的类类型
-        Class clazz = list.get(0).getClass();
         //获取一下要转换的成excel的数据结构
         Map<Integer,List<MyCell>> map = getExcelGraph(clazz,list,titles);
         //将该数据结构转换为WorkBook
@@ -69,17 +71,33 @@ public class WorkbookUtil {
         for(int i=1;i<=listT.size();i++) {
             T t = listT.get(i-1);
             List<MyCell> valueCells = new ArrayList<MyCell>();
+            //写入成功的标识，如果没有写入成功需要又一个空的占位符
+            //boolean flag = false;
             for(String title:titles) {
+                boolean flag = false;
                 for (Field field:fields) {
                     if (field.isAnnotationPresent(ExcelMapping.class)) {
                         ExcelMapping ep = (ExcelMapping) field.getAnnotation(ExcelMapping.class);
                         if(ep.title().equals(title)) {
                             field.setAccessible(true);
                             cell = new MyCell(field.getType(),field.get(t));
+                            //设置事件的
+                            if(ep.convertHandler()!=null) {
+                                cell.setConvertHandler(ep.convertHandler());
+                            }
                             valueCells.add(cell);
+                            //写入成功
+                            flag = true;
                         }
                     }
                 }
+                if(!flag) {
+                    //此时说明该title对应的字段不存在
+                    cell = new MyCell(String.class,"不可导出的列");
+                    cell.setConvertHandler(BaseConvertHandler.class);
+                    valueCells.add(cell);
+                }
+
             }
             if(valueCells.size() != titleCells.size()) {
                 System.out.println("警告：某些属性没有对应到");
@@ -117,8 +135,10 @@ public class WorkbookUtil {
                 row = sheet.createRow(i);
                 list = map.get(i);
                 for(int j=0;j<list.size();j++) {
+                    MyCell myCell = list.get(j);
                     cell = row.createCell(j);
-                    cell.setCellValue( (list.get(j).getObject()==null)?"":list.get(j).getObject().toString() );
+                    ConvertHandler convertHandler = myCell.getConvertHandler().newInstance();
+                    cell.setCellValue(convertHandler.convert(myCell.getObject()));
                 }
             }
         }

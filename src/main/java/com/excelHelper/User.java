@@ -2,6 +2,7 @@ package com.excelHelper;
 
 
 import com.excelHelper.core.ExcelMapping;
+import com.excelHelper.core.convert.SeverityConvertHandler;
 
 /**
  * 测试的实体类
@@ -20,10 +21,14 @@ public class User {
     @ExcelMapping(title = "年龄")
     private Integer age;
 
-    public User(String userName, String passWord, Integer age) {
+    @ExcelMapping(title = "严重性",convertHandler = SeverityConvertHandler.class)
+    private String severity;
+
+    public User(String userName, String passWord, Integer age,String severity) {
         this.userName = userName;
         this.passWord = passWord;
         this.age = age;
+        this.severity = severity;
     }
 
     public String getUserName() {
@@ -48,5 +53,13 @@ public class User {
 
     public void setAge(Integer age) {
         this.age = age;
+    }
+
+    public String getSeverity() {
+        return severity;
+    }
+
+    public void setSeverity(String severity) {
+        this.severity = severity;
     }
 }
