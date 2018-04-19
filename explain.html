@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>实体类导出excel的通用方法</title>
+</head>
+<body>
+<p>
+    基于poi将javaBean导出为excel的方法。
+</p>
+<p>
+    使用场景：
+</p>
+<p>
+    &nbsp;&nbsp;&nbsp;&nbsp;一：在数据库中查询出User的List集合，将其导出为excel格式<br/>
+</p>
+<pre class="brush:java;toolbar:false">    public class User{
+        @ExcelMapping(title=&quot;用户名&quot;)
+        private String userName;
+        @ExcelMapping(title=&quot;密码&quot;)
+        private String passWord;
+        @ExcelMapping(title=&quot;性别&quot;)
+        private Integer sex;
+        ......
+            getter and setter
+        ......
+    }</pre>
+<pre class="brush:java;toolbar:false">    List&lt;User&gt; users = db.findAll();   //需要导出为excel对象的集合
+    List&lt;String&gt; titles = new ArrayList&lt;String&gt;();   //导出为excel的表头，与注解@ExcelMapping 中的title字段对应，导出什么字段，就add什么字段
+    titles.add(&quot;用户名&quot;);
+    titles.add(&quot;密码&quot;);
+
+    Workbook workbook = WorkbookUtil.getWorkBook(User.class,users,titles);</pre>
+<p>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;此时users集合成功导出到了workbook中，具体将workbook写入到文件或者是写入到HttpServletResponse输出流中需自行处理。
+</p>
+<p>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;核心方法为：public static &lt;T&gt; Workbook getWorkBook(Class&lt;?&gt; clazz,List&lt;T&gt; list,List&lt;String&gt; titles) throws Exception {........}<br/>
+</p>
+<p>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;该方法与@ExcelMapping配合使用<br/>
+</p>
+<p>
+    &nbsp;&nbsp;&nbsp;&nbsp;二：有些字段需要转换。比如上面User对象中的sex字段为整形，0代表“女”，1代表“男”。我们导入到excel时需要转换为中文。
+</p>
+<p>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;此时需要自己实现一个转换类，继承com.excelHelper.core.convert.ConvertHandler方法<br/>
+</p>
+<pre class="brush:java;toolbar:false">    public class SexConvertHandlert implements ConvertHandler {
+        @Override
+        public String convert(Integer sex) {
+            if(sex.equals(1)) {
+                return &quot;男&quot;;
+            }
+            else if(sex.equals(0)) {
+                return &quot;女&quot;;
+            }
+            else {
+                return &quot;未知的性别&quot;;
+            }
+        }
+    }</pre>
+<p>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;然后在User类中修改sex字段的注解为：<br/>
+</p>
+<pre class="brush:java;toolbar:false">    @ExcelMapping(title=&quot;性别&quot;,convertHandler = SexConvertHandler.class)</pre>
+<p>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;即可。<br/>
+</p>
+<p>
+    <br/>
+</p>
+<p>
+    <br/>
+</p>
+<p>
+    <br/>
+</p>
+<p>
+    <br/>
+</p>
+<p>
+    <br/>
+</p>
+<p>
+    <br/>
+</p>
+<p>
+    <br/>
+</p>
+<p>
+    <br/>
+</p>
+<p>
+    未完，待续。。。。。。。。。。。。。。。。。。。。
+</p>
+<p>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+</p>
+<p>
+    <br/>
+</p>
+</body>
+</html>
